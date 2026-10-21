@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Minimalist</string>
+
+    <string name="set_default_launcher">Set Minimalist as your home app</string>
+    <string name="home_empty_hint">Swipe right to see your apps.\nLong-press one to pin it here.</string>
+    <string name="phone">Phone</string>
+    <string name="camera">Camera</string>
+    <string name="show_screen_time">Show today’s screen time</string>
+    <string name="screen_time_today">%1$s today</string>
+
+    <string name="search_hint">Search apps</string>
+    <string name="search">Search</string>
+    <string name="clear_search">Clear search</string>
+    <string name="recently_installed">Recently installed</string>
+    <string name="no_matching_apps">No apps match “%1$s”</string>
+
+    <string name="add_to_home">Add to home</string>
+    <string name="remove_from_home">Remove from home</string>
+    <string name="app_info">App info</string>
+    <string name="uninstall">Uninstall</string>
+    <plurals name="home_full">
+        <item quantity="one">Home holds up to %1$d app. Remove it first.</item>
+        <item quantity="other">Home holds up to %1$d apps. Remove one first.</item>
+    </plurals>
+    <string name="cannot_open">Couldn’t open that</string>
+
+    <string name="work_app_label">%1$s (Work)</string>
+</resources>
