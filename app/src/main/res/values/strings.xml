@@ -6,6 +6,8 @@
     <string name="home_empty_hint">Swipe right to see your apps.\nLong-press one to pin it here.</string>
     <string name="phone">Phone</string>
     <string name="camera">Camera</string>
+    <string name="show_screen_time">Show today’s screen time</string>
+    <string name="screen_time_today">%1$s today</string>
 
     <string name="search_hint">Search apps</string>
     <string name="search">Search</string>

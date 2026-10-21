@@ -50,6 +50,8 @@ fun LauncherScreen(
     val focusManager = LocalFocusManager.current
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val homeApps by viewModel.homeApps.collectAsStateWithLifecycle()
+    // Collecting only while resumed re-reads it on every return to the launcher.
+    val screenTime by viewModel.screenTime.collectAsStateWithLifecycle(minActiveState = Lifecycle.State.RESUMED)
     val homeAppKeys = remember(homeApps) { homeApps.mapTo(HashSet()) { it.key } }
     val pagerState = rememberPagerState(initialPage = HOME_PAGE) { 2 }
     var query by rememberSaveable { mutableStateOf("") }
@@ -123,6 +125,7 @@ fun LauncherScreen(
             )
             else -> HomeScreen(
                 homeApps = homeApps,
+                screenTime = screenTime,
                 isDefaultLauncher = isDefaultLauncher,
                 actions = actions,
                 onSetDefaultLauncher = {

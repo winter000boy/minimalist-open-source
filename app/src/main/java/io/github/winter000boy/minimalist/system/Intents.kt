@@ -38,6 +38,16 @@ fun Context.openAlarms() = tryOrToast { startActivity(Intent(AlarmClock.ACTION_S
 
 fun Context.openHomeSettings() = tryOrToast { startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
 
+/** Straight to our own "Usage access" switch where Settings supports it, else the full list. */
+fun Context.openUsageAccessSettings() = tryOrToast {
+    val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+    try {
+        startActivity(Intent(intent).setData(Uri.fromParts("package", packageName, null)))
+    } catch (_: ActivityNotFoundException) {
+        startActivity(intent)
+    }
+}
+
 fun Context.isDefaultLauncher(): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         return getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_HOME)

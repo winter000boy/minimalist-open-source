@@ -7,6 +7,10 @@ No icons, no widgets, no colours to pull you in. Just the time, and the names of
 
 **Home screen**
 - Pure black, with a large clock and the date ("Tuesday, 20th October"). Tap the clock to open your alarms.
+- Today's screen time: a thin white ring around the clock fills up as you use your phone, with "1h 12m today" under the date.
+  A full ring means 2 hours. Time on the home screen itself doesn't count.
+  It needs usage access: tap "Show today's screen time" and turn on **Permit access to app usage data**.
+  The numbers come from Android's own usage stats and never leave the phone (the app has no internet permission).
 - Up to 7 pinned apps, shown as plain text. The limit is deliberate.
 - Phone shortcut bottom-left, camera bottom-right.
 
@@ -60,19 +64,20 @@ sdk.dir=/path/to/Android/sdk
 ```
 app/src/main/java/io/github/winter000boy/minimalist/
 ├── MainActivity.kt          Home activity; forwards Home-button presses to the UI
-├── LauncherViewModel.kt     App list + pinned home apps
+├── LauncherViewModel.kt     App list, pinned home apps, today's screen time
 ├── data/
 │   ├── AppRepository.kt     Reads launchable apps (all profiles), live-updates on install/uninstall
 │   ├── HomeAppsStore.kt     Persists pinned apps
 │   ├── LauncherApp.kt       App model, search, "recently installed"
+│   ├── ScreenTime.kt        Today's screen time from UsageStatsManager, usage-access check
 │   └── Search.kt            Accent-insensitive matching and A–Z grouping
-├── system/Intents.kt        Launching apps, app info, uninstall, dialer, camera, default-launcher check
+├── system/Intents.kt        Launching apps, app info, uninstall, dialer, camera, usage access, default-launcher check
 └── ui/
     ├── LauncherScreen.kt    Two-page pager: [app list] ← swipe → [home]
-    ├── HomeScreen.kt        Clock, date, pinned apps, phone/camera
+    ├── HomeScreen.kt        Clock, date, screen-time ring, pinned apps, phone/camera
     ├── AppDrawer.kt         Search, list, A–Z bar
     ├── AppRow.kt            One app name + long-press menu
-    ├── Formatting.kt        Time and date text
+    ├── Formatting.kt        Time, date and "1h 12m" text
     └── Theme.kt             Black and white, serif type
 ```
 

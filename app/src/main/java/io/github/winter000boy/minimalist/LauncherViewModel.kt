@@ -6,9 +6,15 @@ import androidx.lifecycle.viewModelScope
 import io.github.winter000boy.minimalist.data.AppRepository
 import io.github.winter000boy.minimalist.data.HomeAppsStore
 import io.github.winter000boy.minimalist.data.LauncherApp
+import io.github.winter000boy.minimalist.data.ScreenTime
+import io.github.winter000boy.minimalist.data.ScreenTimeRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
@@ -24,6 +30,19 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val byKey = apps.associateBy(LauncherApp::key)
         keys.mapNotNull(byKey::get)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val screenTimeRepository = ScreenTimeRepository(application)
+
+    /**
+     * Today's screen time. Re-read whenever collection starts, so usage access is re-checked on
+     * return from Settings, then on every minute, in step with the clock.
+     */
+    val screenTime: StateFlow<ScreenTime> = flow {
+        while (true) {
+            emit(screenTimeRepository.today())
+            delay(60_000L - System.currentTimeMillis() % 60_000L)
+        }
+    }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ScreenTime.Unknown)
 
     /** Returns false when the home screen is already full. */
     fun addToHome(app: LauncherApp): Boolean {

@@ -6,6 +6,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.time.Duration
 
 /** "18:47", or "6:47" on a 12-hour phone. */
 fun formatTime(time: LocalTime, is24Hour: Boolean): String =
@@ -21,6 +22,17 @@ fun formatDate(date: LocalDate, locale: Locale): String {
     val weekday = date.dayOfWeek.getDisplayName(TextStyle.FULL, locale)
     val month = date.month.getDisplayName(TextStyle.FULL, locale)
     return "$weekday, $day${ordinalSuffix(day)} $month"
+}
+
+/** "1h 12m", "45m", or "2h" on the hour. */
+fun formatDuration(duration: Duration): String {
+    val hours = duration.inWholeHours
+    val minutes = duration.inWholeMinutes % 60
+    return when {
+        hours == 0L -> "${minutes}m"
+        minutes == 0L -> "${hours}h"
+        else -> "${hours}h ${minutes}m"
+    }
 }
 
 internal fun ordinalSuffix(day: Int): String = when {
