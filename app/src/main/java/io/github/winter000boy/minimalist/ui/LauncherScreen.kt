@@ -4,10 +4,14 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +44,7 @@ import kotlinx.coroutines.launch
 private const val DRAWER_PAGE = 0
 private const val HOME_PAGE = 1
 
+@OptIn(ExperimentalFoundationApi::class) // LocalBringIntoViewSpec
 @Composable
 fun LauncherScreen(
     homePresses: Flow<Unit>,
@@ -69,7 +74,13 @@ fun LauncherScreen(
         if (!isDefaultLauncher) context.openHomeSettings()
     }
 
+    // Off the drawer, its search field may not take focus, so the keyboard can't pop up over home.
+    var searchFocusable by remember { mutableStateOf(false) }
+
     fun goHome(animate: Boolean) {
+        searchFocusable = false
+        query = ""
+        focusManager.clearFocus()
         scope.launch {
             if (animate) pagerState.animateScrollToPage(HOME_PAGE) else pagerState.scrollToPage(HOME_PAGE)
         }
@@ -82,6 +93,7 @@ fun LauncherScreen(
     // Leaving the drawer by any route drops the search and the keyboard.
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
+            searchFocusable = page == DRAWER_PAGE
             if (page == HOME_PAGE) {
                 query = ""
                 focusManager.clearFocus()
@@ -96,7 +108,10 @@ fun LauncherScreen(
     val resources = LocalResources.current
     val actions = remember(context, resources, viewModel) {
         AppActions(
-            launch = context::launchApp,
+            launch = { app ->
+                focusManager.clearFocus()
+                context.launchApp(app)
+            },
             addToHome = { app ->
                 if (!viewModel.addToHome(app)) {
                     val max = LauncherViewModel.MAX_HOME_APPS
@@ -110,29 +125,43 @@ fun LauncherScreen(
         )
     }
 
-    HorizontalPager(
-        state = pagerState,
-        beyondViewportPageCount = 1,
-        modifier = Modifier.fillMaxSize(),
-    ) { page ->
-        when (page) {
-            DRAWER_PAGE -> AppDrawer(
-                apps = apps,
-                homeAppKeys = homeAppKeys,
-                query = query,
-                onQueryChange = { query = it },
-                actions = actions,
-            )
-            else -> HomeScreen(
-                homeApps = homeApps,
-                screenTime = screenTime,
-                isDefaultLauncher = isDefaultLauncher,
-                actions = actions,
-                onSetDefaultLauncher = {
-                    val intent = context.homeRoleRequestIntent()
-                    if (intent != null) homeRoleRequest.launch(intent) else context.openHomeSettings()
-                },
-            )
+    // Only a swipe or goHome() may change pages. Otherwise anything that gains focus in the
+    // off-screen drawer (Android re-focuses the first focusable item after a key press) asks the
+    // pager to bring it into view and scrolls straight back to the drawer. Inside each page,
+    // bring-into-view works as normal, so the app list still follows keyboard focus.
+    val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+    CompositionLocalProvider(LocalBringIntoViewSpec provides NeverBringIntoView) {
+        HorizontalPager(
+            state = pagerState,
+            beyondViewportPageCount = 1,
+            modifier = Modifier.fillMaxSize(),
+        ) { page ->
+            CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
+                when (page) {
+                    DRAWER_PAGE -> AppDrawer(
+                        apps = apps,
+                        homeAppKeys = homeAppKeys,
+                        query = query,
+                        onQueryChange = { query = it },
+                        actions = actions,
+                        searchFocusable = searchFocusable,
+                    )
+                    else -> HomeScreen(
+                        homeApps = homeApps,
+                        screenTime = screenTime,
+                        isDefaultLauncher = isDefaultLauncher,
+                        actions = actions,
+                        onSetDefaultLauncher = {
+                            val intent = context.homeRoleRequestIntent()
+                            if (intent != null) homeRoleRequest.launch(intent) else context.openHomeSettings()
+                        },
+                    )
+                }
+            }
         }
     }
+}
+
+private val NeverBringIntoView = object : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float) = 0f
 }

@@ -15,11 +15,26 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        // The release key comes from the environment (see .github/workflows/android-apk.yml),
+        // so it never lives in the repo. Without it, release builds come out unsigned.
+        val keystore = System.getenv("ANDROID_KEYSTORE_FILE")
+        if (keystore != null) {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

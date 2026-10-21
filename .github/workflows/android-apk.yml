@@ -1,0 +1,85 @@
+# Builds a signed APK in the cloud and attaches it to a GitHub Release, so this link always
+# downloads the newest version:
+#   https://github.com/winter000boy/minimalist-open-source/releases/latest/download/Minimalist.apk
+#
+# Runs on every push to main that changes the app, or manually from the Actions tab ("Run workflow").
+#
+# One-time setup (repo -> Settings -> Secrets and variables -> Actions -> New repository secret):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS   (see README, "Publishing a release")
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to create the release
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Run tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Set up release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          # Every release must be signed with the same key, or phones refuse to install updates
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Android signing secrets are missing. Add them under Settings -> Secrets and variables -> Actions (see README)."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: ./gradlew assembleRelease
+
+      - name: Name the release after the app version
+        id: version
+        run: |
+          # versionName "0.1.0", versionCode 1 -> tag "v0.1.0-build1"
+          NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          echo "tag=v$NAME-build$CODE" >> "$GITHUB_OUTPUT"
+          echo "name=Minimalist $NAME (build $CODE)" >> "$GITHUB_OUTPUT"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Minimalist.apk"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          files: ${{ runner.temp }}/Minimalist.apk
+          body: |
+            Minimalist, an icon-free home screen for Android 8.0 and newer.
+            Download **Minimalist.apk** below and open it on your phone (allow "Install unknown apps" when asked).
+            Then press Home and choose **Minimalist → Always**.

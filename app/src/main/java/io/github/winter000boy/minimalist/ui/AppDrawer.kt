@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -61,6 +62,8 @@ fun AppDrawer(
     query: String,
     onQueryChange: (String) -> Unit,
     actions: AppActions,
+    /** False while the drawer is off screen or being left, so the keyboard can't pop up over home. */
+    searchFocusable: Boolean,
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -75,6 +78,7 @@ fun AppDrawer(
             query = query,
             onQueryChange = onQueryChange,
             onGo = { results.firstOrNull()?.let(actions.launch) },
+            focusable = searchFocusable,
         )
         Row(Modifier.weight(1f)) {
             LazyColumn(state = listState, modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -136,6 +140,7 @@ private fun SearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     onGo: () -> Unit,
+    focusable: Boolean,
 ) {
     val focusRequester = remember { FocusRequester() }
     val textStyle = TextStyle(color = Color.White, fontSize = 20.sp, fontFamily = FontFamily.Serif)
@@ -156,7 +161,10 @@ private fun SearchField(
                 imeAction = ImeAction.Go,
             ),
             keyboardActions = KeyboardActions(onGo = { onGo() }),
-            modifier = Modifier.weight(1f).focusRequester(focusRequester),
+            modifier = Modifier
+                .weight(1f)
+                .focusProperties { canFocus = focusable }
+                .focusRequester(focusRequester),
             decorationBox = { innerTextField ->
                 Column {
                     Box(Modifier.padding(vertical = 10.dp)) {
