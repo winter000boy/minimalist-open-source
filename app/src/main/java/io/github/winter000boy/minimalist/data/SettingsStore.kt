@@ -14,7 +14,6 @@ enum class TextSize(val scale: Float) { Small(0.85f), Default(1f), Large(1.15f),
 data class LauncherSettings(
     val font: AppFont = AppFont.Serif,
     val textSize: TextSize = TextSize.Default,
-    val doubleTapToLock: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -29,7 +28,6 @@ class SettingsStore(context: Context) {
         prefs.edit {
             putString(KEY_FONT, settings.font.name)
             putString(KEY_TEXT_SIZE, settings.textSize.name)
-            putBoolean(KEY_DOUBLE_TAP_TO_LOCK, settings.doubleTapToLock)
         }
     }
 
@@ -39,13 +37,11 @@ class SettingsStore(context: Context) {
             font = AppFont.entries.find { it.name == prefs.getString(KEY_FONT, null) } ?: defaults.font,
             textSize = TextSize.entries.find { it.name == prefs.getString(KEY_TEXT_SIZE, null) }
                 ?: defaults.textSize,
-            doubleTapToLock = prefs.getBoolean(KEY_DOUBLE_TAP_TO_LOCK, defaults.doubleTapToLock),
         )
     }
 
     private companion object {
         const val KEY_FONT = "font"
         const val KEY_TEXT_SIZE = "text_size"
-        const val KEY_DOUBLE_TAP_TO_LOCK = "double_tap_to_lock"
     }
 }

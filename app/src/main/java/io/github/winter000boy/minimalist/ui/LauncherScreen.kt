@@ -31,7 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.winter000boy.minimalist.LauncherViewModel
 import io.github.winter000boy.minimalist.R
-import io.github.winter000boy.minimalist.system.LockScreenService
 import io.github.winter000boy.minimalist.system.homeRoleRequestIntent
 import io.github.winter000boy.minimalist.system.isDefaultLauncher
 import io.github.winter000boy.minimalist.system.launchApp
@@ -173,11 +172,6 @@ fun LauncherScreen(
                         onSetDefaultLauncher = {
                             val intent = context.homeRoleRequestIntent()
                             if (intent != null) homeRoleRequest.launch(intent) else context.openHomeSettings()
-                        },
-                        onDoubleTap = {
-                            if (settings.doubleTapToLock && !LockScreenService.lockScreen()) {
-                                Toast.makeText(context, R.string.double_tap_to_lock_service_off, Toast.LENGTH_LONG).show()
-                            }
                         },
                     )
                 }

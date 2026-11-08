@@ -41,17 +41,8 @@
     <string name="text_size_large">Large</string>
     <string name="text_size_extra_large">Extra large</string>
     <string name="gestures">Gestures</string>
-    <string name="double_tap_to_lock">Double-tap to lock</string>
-    <string name="double_tap_to_lock_on">Double-tap an empty part of the home screen to lock your phone.</string>
-    <string name="double_tap_to_lock_needs_android_9">Needs Android 9 or newer.</string>
-    <string name="double_tap_to_lock_needs_access">One more step: under Accessibility, open Minimalist and turn it on. Tap here to go there.</string>
-    <string name="double_tap_to_lock_restricted">Greyed out? Tap here, then ⋮ → Allow restricted settings, and try again.</string>
-    <string name="double_tap_to_lock_service_off">Double-tap to lock needs one more step: turn on Minimalist under Settings → Accessibility.</string>
     <string name="double_tap_to_wake">Double-tap to wake</string>
     <string name="double_tap_to_wake_info">Your phone does this itself, while the screen is off. Look under Display → Lock screen, or Advanced features → Motions and gestures. Tap here to open display settings.</string>
     <string name="home_app">Home app</string>
     <string name="change_home_app">Change default home app</string>
-
-    <string name="lock_service_label">Minimalist: double-tap to lock</string>
-    <string name="lock_service_description">Lets Minimalist lock your phone when you double-tap an empty part of its home screen. It does nothing else: it can’t see, read or change anything on your screen.</string>
 </resources>

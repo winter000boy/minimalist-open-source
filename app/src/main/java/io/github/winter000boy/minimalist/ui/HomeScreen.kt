@@ -2,7 +2,6 @@ package io.github.winter000boy.minimalist.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,7 +19,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +28,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -68,18 +65,10 @@ fun HomeScreen(
     isDefaultLauncher: Boolean,
     actions: AppActions,
     onSetDefaultLauncher: () -> Unit,
-    onDoubleTap: () -> Unit,
 ) {
     val context = LocalContext.current
-    val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            // Only taps that land on empty space: app names, the clock and buttons handle their own.
-            .pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentOnDoubleTap() }) }
-            .systemBarsPadding(),
-    ) {
+    Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Spacer(Modifier.weight(0.5f))
         Clock(
             screenTime = screenTime,

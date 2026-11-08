@@ -23,12 +23,11 @@ All paths below are under `app/src/main/java/io/github/winter000boy/minimalist/`
 | Screen-time ring around the clock (full = 2 h), "1h 12m today"; needs Usage access | `ui/HomeScreen.kt` (`screenTimeRing`), `data/ScreenTime.kt`, `LauncherViewModel.screenTime` |
 | Up to 7 pinned home apps (`MAX_HOME_APPS`) | `LauncherViewModel.kt`, `data/HomeAppsStore.kt` |
 | Phone / camera shortcuts, "Set as home app" prompt | `ui/HomeScreen.kt`, `system/Intents.kt` |
-| Double-tap empty home space to lock | `ui/HomeScreen.kt` (`detectTapGestures`), `ui/LauncherScreen.kt` (`onDoubleTap`), `system/LockScreenService.kt` |
 | App list on the **right** of home (swipe left to open) | `ui/LauncherScreen.kt` (`HOME_PAGE = 0`, `DRAWER_PAGE = 1`) |
 | List: names only, accent-insensitive search (Go opens first match), "Recently installed" (user apps, 3 days, max 3), A–Z bar, settings gear | `ui/AppDrawer.kt`, `data/LauncherApp.kt`, `data/Search.kt` |
 | Long-press menu: add/remove home, App info, Uninstall | `ui/AppRow.kt` |
 | Work-profile apps, live update on install/uninstall | `data/AppRepository.kt` (`LauncherApps` + callback) |
-| Settings: font (Serif, Sans, Light, Condensed, Mono), text size (0.85–1.3×), double-tap to lock, double-tap-to-wake info, change home app | `ui/SettingsScreen.kt`, `data/SettingsStore.kt`, `ui/Theme.kt` |
+| Settings: font (Serif, Sans, Light, Condensed, Mono), text size (0.85–1.3×), double-tap-to-wake info, change home app | `ui/SettingsScreen.kt`, `data/SettingsStore.kt`, `ui/Theme.kt` |
 
 Persistence is SharedPreferences: `home` (pinned keys, `HomeAppsStore`) and `settings` (`SettingsStore`).
 An app's key is `component.flattenToString()#userSerial`.
@@ -51,10 +50,13 @@ An app's key is `component.flattenToString()#userSerial`.
 - **Text size** works by overriding `LocalDensity`'s `fontScale` in `MinimalistTheme`, which scales every `sp` at
   once. At Default the density isn't touched, so Android 14's non-linear font scaling still applies.
 - **Fonts are system families only** (no bundled font files), so every option works on every phone.
-- **Lock = accessibility service** (`GLOBAL_ACTION_LOCK_SCREEN`, Android 9+). Device admin `lockNow()` was rejected
-  because it disables fingerprint/face unlock until the PIN is entered. The service config
-  (`res/xml/lock_screen_service.xml`) subscribes to no events and can't read window content. On Android 13+,
-  browser-installed apps must first get **App info → ⋮ → Allow restricted settings**; the settings screen says so.
+- **No double-tap to lock, and no sensitive capabilities.** 0.2.0 shipped double-tap to lock through an
+  accessibility service. Play Protect's enhanced fraud protection (India, where the owner lives, and other countries)
+  then **blocked installing the APK from the download link**: it blocks browser/messenger/file-manager installs of any
+  app that declares an accessibility service, a notification listener, or RECEIVE_SMS/READ_SMS, whatever the app
+  actually does. 0.2.1 removed the feature. Don't add any of those to this app. The alternatives were rejected:
+  device admin `lockNow()` makes fingerprint/face unlock stop working until the PIN is entered, and a separate add-on
+  APK would be blocked the same way.
 - **Double-tap to wake can't be built**: apps get no touches while the screen is off. Settings points to the
   phone's own option.
 - **targetSdk stays 36** (lint warns) until Android 37 behaviour changes are tested; compileSdk 37 is required
@@ -79,10 +81,8 @@ An app's key is `component.flattenToString()#userSerial`.
 - AVD `minimalist_test` (Pixel 7, Android 16):
   `~/Library/Android/sdk/emulator/emulator -avd minimalist_test -no-window -no-audio -gpu swiftshader_indirect`.
 - Make it the home app: `adb shell cmd role add-role-holder android.app.role.HOME io.github.winter000boy.minimalist`.
-- Turn the lock service on without the UI:
-  `adb shell settings put secure enabled_accessibility_services io.github.winter000boy.minimalist/io.github.winter000boy.minimalist.system.LockScreenService`.
-- Double-tap via adb: `adb shell "input tap X Y & (sleep 0.15; input tap X Y); wait"`. Check the screen with
-  `adb shell dumpsys power | grep mWakefulness`.
 - `adb shell input keyevent KEYCODE_ENTER` takes the device out of touch mode, which changes focus behaviour.
   Test both that and on-screen keyboard taps when touching focus or navigation code.
 - A release APK can't be installed over a debug one (different signing keys): uninstall first.
+- The emulator doesn't run Play Protect's sideloading checks. After a manifest change, check the APK's capabilities
+  with `aapt2 dump xmltree --file AndroidManifest.xml <apk>` instead.

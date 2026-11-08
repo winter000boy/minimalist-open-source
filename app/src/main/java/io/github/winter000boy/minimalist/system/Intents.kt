@@ -38,14 +38,7 @@ fun Context.openAlarms() = tryOrToast { startActivity(Intent(AlarmClock.ACTION_S
 
 fun Context.openHomeSettings() = tryOrToast { startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
 
-fun Context.openAccessibilitySettings() = tryOrToast { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-
 fun Context.openDisplaySettings() = tryOrToast { startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS)) }
-
-/** Our own App info page, where Android 13+ hides "Allow restricted settings" for sideloaded apps. */
-fun Context.openOwnAppInfo() = tryOrToast {
-    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
-}
 
 /** Straight to our own "Usage access" switch where Settings supports it, else the full list. */
 fun Context.openUsageAccessSettings() = tryOrToast {
