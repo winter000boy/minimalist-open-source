@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.winter000boy.minimalist.LauncherViewModel
 import io.github.winter000boy.minimalist.R
+import io.github.winter000boy.minimalist.system.LockScreenService
 import io.github.winter000boy.minimalist.system.homeRoleRequestIntent
 import io.github.winter000boy.minimalist.system.isDefaultLauncher
 import io.github.winter000boy.minimalist.system.launchApp
@@ -40,9 +41,9 @@ import io.github.winter000boy.minimalist.system.uninstall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-// The drawer sits to the left of home, so swiping right reveals it.
-private const val DRAWER_PAGE = 0
-private const val HOME_PAGE = 1
+// The drawer sits to the right of home, so swiping left reveals it.
+private const val HOME_PAGE = 0
+private const val DRAWER_PAGE = 1
 
 @OptIn(ExperimentalFoundationApi::class) // LocalBringIntoViewSpec
 @Composable
@@ -57,9 +58,11 @@ fun LauncherScreen(
     val homeApps by viewModel.homeApps.collectAsStateWithLifecycle()
     // Collecting only while resumed re-reads it on every return to the launcher.
     val screenTime by viewModel.screenTime.collectAsStateWithLifecycle(minActiveState = Lifecycle.State.RESUMED)
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val homeAppKeys = remember(homeApps) { homeApps.mapTo(HashSet()) { it.key } }
     val pagerState = rememberPagerState(initialPage = HOME_PAGE) { 2 }
     var query by rememberSaveable { mutableStateOf("") }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
 
     var isDefaultLauncher by remember { mutableStateOf(context.isDefaultLauncher()) }
     LifecycleResumeEffect(Unit) {
@@ -86,10 +89,16 @@ fun LauncherScreen(
         }
     }
 
-    // Home button while the drawer is open.
-    LaunchedEffect(homePresses) { homePresses.collect { goHome(animate = true) } }
-    // Coming back from an app, or waking the phone, always lands on the clock.
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { goHome(animate = false) }
+    // Home button while the drawer or settings are open.
+    LaunchedEffect(homePresses) {
+        homePresses.collect {
+            showSettings = false
+            goHome(animate = true)
+        }
+    }
+    // Coming back from an app, or waking the phone, always lands on the clock. Settings stay open,
+    // so a trip to Accessibility settings to turn on double-tap to lock comes back to them.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (!showSettings) goHome(animate = false) }
     // Leaving the drawer by any route drops the search and the keyboard.
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
@@ -125,6 +134,15 @@ fun LauncherScreen(
         )
     }
 
+    if (showSettings) {
+        SettingsScreen(
+            settings = settings,
+            onChange = viewModel::updateSettings,
+            onClose = { showSettings = false },
+        )
+        return
+    }
+
     // Only a swipe or goHome() may change pages. Otherwise anything that gains focus in the
     // off-screen drawer (Android re-focuses the first focusable item after a key press) asks the
     // pager to bring it into view and scrolls straight back to the drawer. Inside each page,
@@ -145,6 +163,7 @@ fun LauncherScreen(
                         onQueryChange = { query = it },
                         actions = actions,
                         searchFocusable = searchFocusable,
+                        onOpenSettings = { showSettings = true },
                     )
                     else -> HomeScreen(
                         homeApps = homeApps,
@@ -154,6 +173,11 @@ fun LauncherScreen(
                         onSetDefaultLauncher = {
                             val intent = context.homeRoleRequestIntent()
                             if (intent != null) homeRoleRequest.launch(intent) else context.openHomeSettings()
+                        },
+                        onDoubleTap = {
+                            if (settings.doubleTapToLock && !LockScreenService.lockScreen()) {
+                                Toast.makeText(context, R.string.double_tap_to_lock_service_off, Toast.LENGTH_LONG).show()
+                            }
                         },
                     )
                 }

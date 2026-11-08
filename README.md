@@ -13,15 +13,29 @@ No icons, no widgets, no colours to pull you in. Just the time, and the names of
   The numbers come from Android's own usage stats and never leave the phone (the app has no internet permission).
 - Up to 7 pinned apps, shown as plain text. The limit is deliberate.
 - Phone shortcut bottom-left, camera bottom-right.
+- Double-tap an empty part of the screen to lock the phone (turn it on in Settings first, see below).
 
-**App list** (swipe right from home)
+**App list** (swipe left from home)
 - Every installed app, alphabetical, names only, no icons.
 - Search bar at the top. Press Go on the keyboard to open the first match.
 - "Recently installed" section at the top for apps you installed in the last 3 days.
 - A–Z bar on the right: tap or drag to jump.
 - Long-press any app for **Add to home / Remove from home**, **App info**, or **Uninstall**.
+- Gear icon at the bottom-right opens **Settings**.
 
-Swipe left, press Back, or press Home to return to the clock. Leaving an app always brings you back to the clock, not the list.
+Swipe right, press Back, or press Home to return to the clock. Leaving an app always brings you back to the clock, not the list.
+
+**Settings**
+- **Font:** Serif (default), Sans serif, Light, Condensed or Monospace, for every piece of text in the app.
+- **Text size:** Small, Default, Large or Extra large. This scales on top of your phone's own font size.
+- **Double-tap to lock.** Android only lets a home app lock the screen through an accessibility service, so this
+  needs one extra step. Turning the switch on opens **Settings → Accessibility**: tap **Minimalist: double-tap to lock**,
+  turn it on and tap **Allow**. Android's warning about "full control" is the same for every accessibility service;
+  this one subscribes to no events and can't read your screen. It only locks the phone.
+  If the switch is greyed out (Android 13+, for apps installed from a browser): open **App info** for Minimalist,
+  tap **⋮ → Allow restricted settings**, then try again. Needs Android 9 or newer.
+- **Double-tap to wake** can't be done by an app, because apps don't receive touches while the screen is off.
+  Most phones have it built in: look under **Display → Lock screen**, or **Advanced features → Motions and gestures**.
 
 Work-profile apps are included and marked "(Work)".
 
@@ -95,15 +109,19 @@ app/src/main/java/io/github/winter000boy/minimalist/
 │   ├── HomeAppsStore.kt     Persists pinned apps
 │   ├── LauncherApp.kt       App model, search, "recently installed"
 │   ├── ScreenTime.kt        Today's screen time from UsageStatsManager, usage-access check
-│   └── Search.kt            Accent-insensitive matching and A–Z grouping
-├── system/Intents.kt        Launching apps, app info, uninstall, dialer, camera, usage access, default-launcher check
+│   ├── Search.kt            Accent-insensitive matching and A–Z grouping
+│   └── SettingsStore.kt     Font, text size and double-tap-to-lock settings
+├── system/
+│   ├── Intents.kt           Launching apps, app info, uninstall, dialer, camera, settings pages, default-launcher check
+│   └── LockScreenService.kt Accessibility service that only locks the screen
 └── ui/
-    ├── LauncherScreen.kt    Two-page pager: [app list] ← swipe → [home]
+    ├── LauncherScreen.kt    Two-page pager: [home] ← swipe → [app list], plus the settings screen
     ├── HomeScreen.kt        Clock, date, screen-time ring, pinned apps, phone/camera
     ├── AppDrawer.kt         Search, list, A–Z bar
     ├── AppRow.kt            One app name + long-press menu
     ├── Formatting.kt        Time, date and "1h 12m" text
-    └── Theme.kt             Black and white, serif type
+    ├── SettingsScreen.kt    Font, text size, gestures, home app
+    └── Theme.kt             Black and white; the chosen font and text size
 ```
 
 Built with Kotlin and Jetpack Compose. Minimum Android 8.0 (API 26).

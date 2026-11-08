@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import io.github.winter000boy.minimalist.data.AppRepository
 import io.github.winter000boy.minimalist.data.HomeAppsStore
 import io.github.winter000boy.minimalist.data.LauncherApp
+import io.github.winter000boy.minimalist.data.LauncherSettings
 import io.github.winter000boy.minimalist.data.ScreenTime
 import io.github.winter000boy.minimalist.data.ScreenTimeRepository
+import io.github.winter000boy.minimalist.data.SettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,6 +22,11 @@ import kotlinx.coroutines.flow.stateIn
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
 
     private val homeAppsStore = HomeAppsStore(application)
+    private val settingsStore = SettingsStore(application)
+
+    val settings: StateFlow<LauncherSettings> = settingsStore.settings
+
+    fun updateSettings(transform: (LauncherSettings) -> LauncherSettings) = settingsStore.update(transform)
 
     /** Every launchable app, alphabetical. */
     val apps: StateFlow<List<LauncherApp>> = AppRepository(application).apps()

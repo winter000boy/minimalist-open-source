@@ -7,6 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.winter000boy.minimalist.ui.LauncherScreen
 import io.github.winter000boy.minimalist.ui.MinimalistTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,8 +25,10 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         setContent {
-            MinimalistTheme {
-                LauncherScreen(homePresses = homePresses)
+            val viewModel: LauncherViewModel = viewModel()
+            val settings by viewModel.settings.collectAsStateWithLifecycle()
+            MinimalistTheme(font = settings.font, textSize = settings.textSize) {
+                LauncherScreen(homePresses = homePresses, viewModel = viewModel)
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,8 +44,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -64,6 +64,7 @@ fun AppDrawer(
     actions: AppActions,
     /** False while the drawer is off screen or being left, so the keyboard can't pop up over home. */
     searchFocusable: Boolean,
+    onOpenSettings: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -116,20 +117,28 @@ fun AppDrawer(
                 }
             }
 
-            if (query.isBlank()) {
-                // List position of the first app under each letter.
-                val letterPositions = remember(results, showRecent) {
-                    val offset = if (showRecent) recent.size + 2 else 0
-                    buildMap {
-                        results.forEachIndexed { i, app -> putIfAbsent(app.indexLetter, i + offset) }
+            Column(Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (query.isBlank()) {
+                    // List position of the first app under each letter.
+                    val letterPositions = remember(results, showRecent) {
+                        val offset = if (showRecent) recent.size + 2 else 0
+                        buildMap {
+                            results.forEachIndexed { i, app -> putIfAbsent(app.indexLetter, i + offset) }
+                        }
                     }
+                    AlphabetIndex(
+                        letters = letterPositions.keys.toList(),
+                        onLetter = { letter ->
+                            scope.launch { listState.scrollToItem(letterPositions.getValue(letter)) }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
                 }
-                AlphabetIndex(
-                    letters = letterPositions.keys.toList(),
-                    onLetter = { letter ->
-                        scope.launch { listState.scrollToItem(letterPositions.getValue(letter)) }
-                    },
-                )
+                IconButton(onClick = onOpenSettings) {
+                    Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings))
+                }
             }
         }
     }
@@ -143,7 +152,7 @@ private fun SearchField(
     focusable: Boolean,
 ) {
     val focusRequester = remember { FocusRequester() }
-    val textStyle = TextStyle(color = Color.White, fontSize = 20.sp, fontFamily = FontFamily.Serif)
+    val textStyle = LocalTextStyle.current.copy(color = Color.White, fontSize = 20.sp)
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp, top = 12.dp),
@@ -191,12 +200,15 @@ private fun SearchField(
 
 /** Tap or drag along the letters to jump through the list. */
 @Composable
-private fun AlphabetIndex(letters: List<Char>, onLetter: (Char) -> Unit) {
-    if (letters.isEmpty()) return
+private fun AlphabetIndex(letters: List<Char>, onLetter: (Char) -> Unit, modifier: Modifier = Modifier) {
+    if (letters.isEmpty()) {
+        Spacer(modifier)
+        return
+    }
     val haptics = LocalHapticFeedback.current
     var active by remember { mutableStateOf<Char?>(null) }
 
-    Box(Modifier.fillMaxHeight().width(36.dp), contentAlignment = Alignment.Center) {
+    Box(modifier.width(36.dp), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
